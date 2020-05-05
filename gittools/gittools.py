@@ -1,0 +1,55 @@
+"""Git tools for Python."""
+
+from warnings import warn
+
+from pathlib import Path
+
+from git import Repo
+from git import InvalidGitRepositoryError
+
+
+def file_in_commit(file, commit):
+    """Return True if file in tree of commit, False if not."""
+
+    fileabs = Path(file).resolve()  # absolute path of filename
+    rootabs = Path(commit.repo.working_dir).resolve()  # path of root of repo
+    localname = str(fileabs.relative_to(rootabs))  # name of file in the repo
+
+    if not fileabs.exists():
+        raise FileNotFoundError(f'File {fileabs} does not exist')
+
+    try:
+        commit.tree[localname]
+    except KeyError:  # in this case the file is not in the commit
+        return False
+    else:
+        return True
+
+
+def parent_repo(file):
+    """Return repository object if file is in a subfolder of a git repo."""
+
+    filepath = Path(file)
+
+    try:
+        repo = Repo(filepath, search_parent_directories=True)
+    except InvalidGitRepositoryError:
+        warn('No git repository found. Returning None.')
+        return None
+    else:
+        return repo
+
+
+def current_commit_hash(file, dirtyok=False):
+    """Return HEAD commit hash corresponding to file if it's in a GIT repo."""
+
+    repo = parent_repo(file)
+    if not dirtyok and repo.is_dirty():
+        raise Exception("Dirty repo, please commit recent changes first.")
+
+    commit = repo.head.commit
+    assert file_in_commit(file, commit), "File is not in the HEAD commit."
+
+    return str(commit)
+
+
