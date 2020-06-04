@@ -3,39 +3,85 @@ Tools for using GIT in python, based on *gitpython*.
 Functions
 ---------
 
-`file_in_commit(file, commit)`
+The module is designed to use mainly the following function for now:
 
-Return True if file belongs to the commit's working tree, else False.
+`current_commit_hash(path=None, checkdirty=True, checktree=True)`
+
+Return HEAD commit hash corresponding to path if it's in a GIT repo.
+
+**Input**
+- path: str or path object of folder or file. If None (default), it is
+considered to be the current working directory.
+- checkdirty: bool, if True exception raised if repo has uncommitted changes.
+- checktree: bool, if True exception raised if path/file not in repo's
+working tree and path is not the root directory of the repo.
+
+**Output**
+- str of the commit's hash name.
+---
+
+The following function is coded to be used by *current_commit_hash* but is also made available in case it proves useful in some situations.
+
+`path_in_tree(path, commit)`
+
+Return True if path belongs to the commit's working tree, else False.
+
+Note that if the path is the root directory of the git repository (where
+the .git is located), the function also returns True even if one could
+argue that the root directory is technically not in the repo's tree.
 
 **Inputs**
-- file: str or path object
+- path: str or path object of folder or file
 - commit: *gitpython* commit object
 
 ---
 
-`parent_repo(file)`
 
-Return repository object if file is in a (sub)folder of a GIT repo.
+Examples
+--------
 
-**Input**
-- file: str or path object
-
-**Output**
-- repo: *gitpython* object of the *Repo* class, or None for inexistent repo.
+In all examples below, `h` is a string containing the 40-digit hexadecimal commit ID (hash name). Before running the examples, the module needs to be imported with
+```python
+from gittools import current_commit_hash
+```
 
 ---
 
-`current_commit_hash(file, dirtyok=False)`
+Find the most recent commit ID of the **current working directory**
+```python
+h = current_commit_hash()
+```
 
-Return HEAD commit hash corresponding to file if it's in a GIT repo.
+---
 
-**Input**
-- file: str or path object
-- dirtyok: bool, if True exception raised if repo has uncommitted changes.
+If the repository has **uncommited changes**, use the `checkdirty` option to avoid raising an exception:
+```python
+h = current_commit_hash(checkdirty=False)
+```
 
-**Output**
-- str of the commit's hash name.
+---
 
+Find the most recent commit ID of a **specific file**, e.g. *Test/foo.py*
+```python
+h = current_commit_hash('Test/foo.py')
+```
+
+---
+
+Note that the previous example will raise an exception if the **file is not tracked** in a git repository. To silence the exception and see the most recent commit ID of the closest git repository in a parent directory, use the `checktree` option:
+```python
+h = current_commit_hash('Test/untracked_file.pyc', checktree=False)
+```
+
+---
+
+Find the commit ID of a **python package** *mypackage* that is in a git repository:
+```python
+import mypackage
+h = current_commit_hash(mypackage.__file__)
+```
+
+---
 
 Install
 -------
