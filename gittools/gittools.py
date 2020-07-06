@@ -7,6 +7,16 @@ from pathlib import Path, PurePosixPath
 from git import Repo
 
 
+class DirtyRepo(Exception):
+    """Specific exception indicating some changes in repo are not committed."""
+    pass
+
+
+class NotInTree(Exception):
+    """Specific exception indicating file is not in commit tree."""
+    pass
+
+
 def _pathify(path):
     """Transforms str or partial path in fully resolved path object."""
     pathabs = Path(path).resolve()  # absolute path of filename
@@ -65,13 +75,11 @@ def current_commit_hash(path=None, checkdirty=True, checktree=True):
     repo = Repo(p, search_parent_directories=True)
 
     if checkdirty and repo.is_dirty():
-        raise Exception("Dirty repo, please commit recent changes first.")
+        raise DirtyRepo("Dirty repo, please commit recent changes first.")
 
     commit = repo.head.commit
 
     if checktree and not path_in_tree(path, commit):
-        raise Exception("Path or file not in working tree.")
+        raise NotInTree("Path or file not in working tree.")
 
     return str(commit)
-
-
