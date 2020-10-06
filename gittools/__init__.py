@@ -7,7 +7,8 @@ but path_in_tree() is also made available in case it proves useful. See
 help of these functions and README file for documentation and examples.
 """
 
-from .gittools import path_in_tree, DirtyRepo, NotInTree
-from .gittools import current_commit_hash, module_git_status
+from .gittools import DirtyRepo, NotInTree
+from .gittools import current_commit_hash, path_status, module_status
+from .gittools import repo_tags, path_in_tree
 
-__version__ = 0.2
+__version__ = 0.3

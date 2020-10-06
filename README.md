@@ -1,117 +1,6 @@
-Tools for using GIT in python, based on *gitpython*.
+# General info
 
-Functions
----------
-
-The module is designed to use mainly the two following function:
-
----
-
-```python
-current_commit_hash(path=None, checkdirty=True, checktree=True)
-```
-
-Return HEAD commit hash corresponding to path if it's in a GIT repo.
-
-**Input**
-- path: str or path object of folder or file. If None (default), it is
-considered to be the current working directory.
-- checkdirty: bool, if True exception raised if repo has uncommitted changes.
-- checktree: bool, if True exception raised if path/file not in repo's
-working tree and path is not the root directory of the repo.
-
-**Output**
-- str of the commit's hash name.
-
----
-
-```python
-module_git_status(module, warning=False)
-```
-
-Get current commit hashes and status (dirty or clean) of list of modules.
-
-**Input**
-
-- module or list/iterable of modules (each must belong to a git repository)
-- warning: if True, prints a warning if some git repos are dirty.
-
-**Output**
-
-- Dictionary with module name as keys, and a dict {hash:, status:} as values
-
----
-
-The following function is coded to be used by *current_commit_hash* but is also made available in case it proves useful in some situations.
-
-`path_in_tree(path, commit)`
-
-Return True if path belongs to the commit's working tree, else False.
-
-Note that if the path is the root directory of the git repository (where
-the .git is located), the function also returns True even if one could
-argue that the root directory is technically not in the repo's tree.
-
-**Inputs**
-- path: str or path object of folder or file
-- commit: *gitpython* commit object
-
----
-
-
-Examples
---------
-
-In all examples below, `h` is a string containing the 40-digit hexadecimal commit ID (hash name). Before running the examples, the module needs to be imported with
-```python
-from gittools import current_commit_hash
-```
-
----
-
-Find the most recent commit ID of the **current working directory**
-```python
-h = current_commit_hash()
-```
-
----
-
-If the repository has **uncommited changes**, use the `checkdirty` option to avoid raising an exception:
-```python
-h = current_commit_hash(checkdirty=False)
-```
-
----
-
-Find the most recent commit ID of a **specific file**, e.g. *Test/foo.py*
-```python
-h = current_commit_hash('Test/foo.py')
-```
-
----
-
-Note that the previous example will raise an exception if the **file is not tracked** in a git repository. To silence the exception and see the most recent commit ID of the closest git repository in a parent directory, use the `checktree` option:
-```python
-h = current_commit_hash('Test/untracked_file.pyc', checktree=False)
-```
-
----
-
-Find the commit ID of a **python package** *mypackage* that is in a git repository:
-```python
-import mypackage
-h = current_commit_hash(mypackage.__file__)
-```
-
-or use the higher level to get hash and clean/dirty status in form of a dictionary of a module or list of modules:
-```python
-import mypackage1, mypackage2
-info1 = module_git_status(mypackage1)
-info2 = module_git_status(mypackage2, warning=True)  # warning if dirty repo
-infos = module_git_status([mypackage1, mypackage2])
-```
-
----
+Tools for using git in python, based on *gitpython*.
 
 Install
 -------
@@ -146,9 +35,102 @@ were downloaded and/or edit the files with direct effect in Python, run the
 following install command instead: `python -m pip install -e .`.
 
 
-Requirements
-------------
+# Available functions
+
+See help / docstrings of functions for details, and **Examples** section below.
+
+```python
+current_commit_hash(path='.', checkdirty=True, checktree=True)
+```
+commit hash (str) of HEAD commit of repository where path belongs; if True, `checkdirty` and `checktree` raise exceptions if repo is dirty and if path does not belong to repo's tree, respectively.
+
+```python
+path_status(path='.')
+```
+Similar to `current_commit_hash()` but does not raise exceptions. Instead, returns git status (commit hash, dirty or clean, tag if there is one) as a dictionary.
+
+```python
+module_status(module, warning=False)
+```
+Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`
+
+```python
+repo_tags(path='.')
+```
+Lists all tags in repository the path belongs to, as a {'commit hash': 'tag name'} dictionary (both keys and values are strings).
+
+```python
+path_in_tree(path, commit)
+```
+This function is used by *current_commit_hash* but is also made available in case it proves useful in some situations. Returns True if path belongs to the commit's working tree (or is the root directory of repo), else False.
+
+
+Exceptions
+----------
+
+The `checkdirty` and `checktree` options raise custom exceptions: `DirtyRepo` and `NotInTree`, respectively.
+
+
+# Examples
+
+```python
+>>> from gittools import current_commit_hash, repo_tags
+
+>>> current_commit_hash()  # Most recent commit of the current working directory
+'1f37588eb5aadf802274fae74bc4abb77ddd8004'
+
+# Other possibilities
+>>> current_commit_hash(checkdirty=False) # same, but avoid raising DirtyRepo
+>>> current_commit_hash('gitrepos/repo1/foo.py') # same, but specify path/file
+
+# Note that the previous example will raise an exception if the file is not
+# tracked in a git repository. To silence the exception and see the most
+# recent commit hash of the closest git repository in a parent directory:
+>>> current_commit_hash('Test/untracked_file.pyc', checktree=False)
+
+# List all tags of repo:
+>>> repo_tags()  # current directory, but also possible to specify path
+{'1f37588eb5aadf802274fae74bc4abb77ddd8004': 'v1.1.8',
+ 'b5173941c9cce9bb786b0c046c67ea505786d820': 'v1.1.9'}
+```
+
+It can be easier to use higher level functions to get hash name, clean/dirty status, and tag (if it exists):
+```python
+>>> from gittools import path_status, module_status
+
+>>> path_status()  # current working directory (also possible to specify path)
+{'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+ 'status': 'clean',
+ 'tag': 'v1.1.8'}
+
+>>> import mypackage1  # module with clean repo and tag at current commit
+>>> module_status(mypackage1)
+{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+                'status': 'clean',
+                'tag': 'v1.1.8'}}
+
+>>> import mypackage2  # this package has uncommitted changes and no tags
+>>> module_status(mypackage2, warning=True)
+Warning: the following modules have dirty git repositories: mypackage2
+{'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
+                'status': 'dirty'}}
+
+>>> module_status([mypackage1, mypackage2]) # list of modules
+{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+                'status': 'clean',
+                'tag': 'v1.1.8'},
+ 'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
+                'status': 'dirty'}}
+```
+
+
+# Requirements
 
 - Python >= 3.6 (f-strings)
 - gitpython (https://gitpython.readthedocs.io)
-- see gitpython requirements for GIT minimal version.
+- see gitpython requirements for git minimal version.
+
+
+# Author
+
+Olivier Vincent (olivier.vincent@univ-lyon1.fr)

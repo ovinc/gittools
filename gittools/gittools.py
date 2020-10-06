@@ -1,8 +1,12 @@
 """Git tools for Python."""
 
+
 from warnings import warn
 from pathlib import Path, PurePosixPath
 from git import Repo
+
+
+# ============================ Custom exceptions =============================
 
 
 class DirtyRepo(Exception):
@@ -13,6 +17,9 @@ class DirtyRepo(Exception):
 class NotInTree(Exception):
     """Specific exception indicating file is not in commit tree."""
     pass
+
+
+# =========================== Private subroutines ============================
 
 
 def _pathify(path):
@@ -31,6 +38,9 @@ def _make_iterable(x):
         return x,
     else:
         return x
+
+
+# ============================= Public functions =============================
 
 
 def path_in_tree(path, commit):
@@ -62,23 +72,20 @@ def path_in_tree(path, commit):
         return True
 
 
-def current_commit_hash(path=None, checkdirty=True, checktree=True):
-    """Return HEAD commit hash corresponding to path if it's in a GIT repo.
+def current_commit_hash(path='.', checkdirty=True, checktree=True):
+    """Return HEAD commit hash corresponding to path if it's in a git repo.
 
-    **Input**
-    - path: str or path object of folder or file. If None (default), it is
-    considered to be the current working directory.
+    INPUT
+    -----
+    - path: str or path object of folder/file. Default: current working dir.
     - checkdirty: bool, if True exception raised if repo has uncommitted changes.
     - checktree: bool, if True exception raised if path/file not in repo's
     working tree and path is not the root directory of the repo.
 
-    **Output**
+    OUTPUT
+    ------
     - str of the commit's hash name.
     """
-
-    if path is None:
-        path = '.'
-
     p = _pathify(path)
     repo = Repo(p, search_parent_directories=True)
 
@@ -93,40 +100,84 @@ def current_commit_hash(path=None, checkdirty=True, checktree=True):
     return str(commit)
 
 
-def module_git_status(module, warning=False):
-    """Get current commit hashes and status (dirty or clean) of list of modules.
+def repo_tags(path='.'):
+    """Return dict of all {'commit hash': 'tag name'} in git repo.
 
     INPUT
     -----
-    module or list/iterable of modules (each must belong to a git repository)
-    warning: if True, prints a warning if some git repos are dirty.
+    - path: str or path object of folder/file. Default: current working dir.
 
     OUTPUT
     ------
-    Dictionary with module name as keys, and a dict {hash:, status:} as values
+    dict  {'commit hash': 'tag name'} (both key and value are str).
     """
-    modules = _make_iterable(module)
-    dirty_repos = []
+    p = _pathify(path)
+    repo = Repo(p, search_parent_directories=True)
+
+    return {str(tag.commit): str(tag) for tag in repo.tags}
+
+
+def path_status(path='.'):
+    """Current (HEAD) commit hashes, status (dirty or clean), and potential tag.
+
+    Slightly higher level compared to current_commit_hash, as it returns a
+    dictionary with a variety of information (status, hash, tag)
+
+    INPUT
+    -----
+    - path: str or path object of folder/file. Default: current working dir.
+
+    OUTPUT
+    ------
+    Dictionary keys 'hash', 'status' (clean/diry), 'tag' (if exists)
+    """
     infos = {}
 
+    # get commit hash and check repo status (dirty or clean) -----------------
+    try:
+        cch = current_commit_hash(path)
+    except DirtyRepo:
+        cch = current_commit_hash(path, checkdirty=False)
+        status = 'dirty'
+    else:
+        status = 'clean'
+
+    infos['hash'] = cch
+    infos['status'] = status
+
+    # check if tag associated with commit ------------------------------------
+    commits_with_tags = repo_tags(path)
+    if cch in commits_with_tags:
+        infos['tag'] = commits_with_tags[cch]
+
+    return infos
+
+
+def module_status(module, warning=False):
+    """Get status info (current hash, dirty/clean repo, tag) of module(s).
+
+    INPUT
+    -----
+    - module or list/iterable of modules (each must belong to a git repository)
+    - warning: if True, prints a warning if some git repos are dirty.
+
+    OUTPUT
+    ------
+    Dict with module name as keys, and a dict {hash:, status:, tag:} as values
+    """
+    modules = _make_iterable(module)
+    mods = {}
+
     for module in modules:
-
         name = module.__name__
-        try:
-            commit = current_commit_hash(module.__file__)
-        except DirtyRepo:
-            commit = current_commit_hash(module.__file__, checkdirty=False)
-            status = 'dirty'
-            dirty_repos.append(name)
-        else:
-            status = 'clean'
+        infos = path_status(module.__file__)
+        mods[name] = infos
 
-        info = {'hash': commit, 'status': status}
-        infos[name] = info
+    dirty_repos = [m for m in mods if mods[name]['status'] == 'dirty']
 
     if warning and len(dirty_repos) > 0:
-        msg = '\nWarning: the following modules have dirty GIT repositories: '
+        msg = '\nWarning: the following modules have dirty git repositories: '
         msg += ', '.join(dirty_repos)
         print(msg)
 
-    return infos
+    return mods
