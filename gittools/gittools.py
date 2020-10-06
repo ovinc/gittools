@@ -173,11 +173,11 @@ def module_status(module, warning=False):
         infos = path_status(module.__file__)
         mods[name] = infos
 
-    dirty_repos = [m for m in mods if mods[name]['status'] == 'dirty']
+    dirty_modules = [mod for mod, info in mods.items() if info['status'] == 'dirty']
 
-    if warning and len(dirty_repos) > 0:
+    if warning and len(dirty_modules) > 0:
         msg = '\nWarning: the following modules have dirty git repositories: '
-        msg += ', '.join(dirty_repos)
+        msg += ', '.join(dirty_modules)
         print(msg)
 
     return mods
