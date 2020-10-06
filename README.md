@@ -3,9 +3,13 @@ Tools for using GIT in python, based on *gitpython*.
 Functions
 ---------
 
-The module is designed to use mainly the following function for now:
+The module is designed to use mainly the two following function:
 
-`current_commit_hash(path=None, checkdirty=True, checktree=True)`
+---
+
+```python
+current_commit_hash(path=None, checkdirty=True, checktree=True)
+```
 
 Return HEAD commit hash corresponding to path if it's in a GIT repo.
 
@@ -18,6 +22,24 @@ working tree and path is not the root directory of the repo.
 
 **Output**
 - str of the commit's hash name.
+
+---
+
+```python
+module_git_status(module, warning=False)
+```
+
+Get current commit hashes and status (dirty or clean) of list of modules.
+
+**Input**
+
+- module or list/iterable of modules (each must belong to a git repository)
+- warning: if True, prints a warning if some git repos are dirty.
+
+**Output**
+
+- Dictionary with module name as keys, and a dict {hash:, status:} as values
+
 ---
 
 The following function is coded to be used by *current_commit_hash* but is also made available in case it proves useful in some situations.
@@ -81,10 +103,34 @@ import mypackage
 h = current_commit_hash(mypackage.__file__)
 ```
 
+or use the higher level to get hash and clean/dirty status in form of a dictionary of a module or list of modules:
+```python
+import mypackage1, mypackage2
+info1 = module_git_status(mypackage1)
+info2 = module_git_status(mypackage2, warning=True)  # warning if dirty repo
+infos = module_git_status([mypackage1, mypackage2])
+```
+
 ---
 
 Install
 -------
+
+### Method 1
+
+In a terminal:
+```bash
+pip install git+https://cameleon.univ-lyon1.fr/ovincent/gittools
+```
+
+### Method 2
+
+Clone the project or download directly the files into a folder.
+In a terminal, cd into the project or folder, where the setup.py is, then
+
+```bash
+pip install .
+```
 
 - Clone the project or download directly the files into a folder.
 - In a terminal, `cd` into the project's folder (where the file

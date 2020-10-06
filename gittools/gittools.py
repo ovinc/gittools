@@ -1,9 +1,7 @@
 """Git tools for Python."""
 
 from warnings import warn
-
 from pathlib import Path, PurePosixPath
-
 from git import Repo
 
 
@@ -23,6 +21,16 @@ def _pathify(path):
     if not pathabs.exists():
         raise FileNotFoundError(f'Path {pathabs} does not exist')
     return pathabs
+
+
+def _make_iterable(x):
+    """Transforms non-iterables into a tuple, but keeps iterables unchanged."""
+    try:
+        iter(x)
+    except TypeError:
+        return x,
+    else:
+        return x
 
 
 def path_in_tree(path, commit):
@@ -83,3 +91,42 @@ def current_commit_hash(path=None, checkdirty=True, checktree=True):
         raise NotInTree("Path or file not in working tree.")
 
     return str(commit)
+
+
+def module_git_status(module, warning=False):
+    """Get current commit hashes and status (dirty or clean) of list of modules.
+
+    INPUT
+    -----
+    module or list/iterable of modules (each must belong to a git repository)
+    warning: if True, prints a warning if some git repos are dirty.
+
+    OUTPUT
+    ------
+    Dictionary with module name as keys, and a dict {hash:, status:} as values
+    """
+    modules = _make_iterable(module)
+    dirty_repos = []
+    infos = {}
+
+    for module in modules:
+
+        name = module.__name__
+        try:
+            commit = current_commit_hash(module.__file__)
+        except DirtyRepo:
+            commit = current_commit_hash(module.__file__, checkdirty=False)
+            status = 'dirty'
+            dirty_repos.append(name)
+        else:
+            status = 'clean'
+
+        info = {'hash': commit, 'status': status}
+        infos[name] = info
+
+    if warning and len(dirty_repos) > 0:
+        msg = '\nWarning: the following modules have dirty GIT repositories: '
+        msg += ', '.join(dirty_repos)
+        print(msg)
+
+    return infos
