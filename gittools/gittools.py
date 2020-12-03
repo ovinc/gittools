@@ -1,10 +1,10 @@
 """Git tools for Python."""
 
-
-from warnings import warn
 from pathlib import Path, PurePosixPath
-from git import Repo
+from datetime import datetime
+import json
 
+from git import Repo
 
 # ============================ Custom exceptions =============================
 
@@ -131,7 +131,7 @@ def path_status(path='.'):
     ------
     Dictionary keys 'hash', 'status' (clean/diry), 'tag' (if exists)
     """
-    infos = {}
+    info = {}
 
     # get commit hash and check repo status (dirty or clean) -----------------
     try:
@@ -142,15 +142,15 @@ def path_status(path='.'):
     else:
         status = 'clean'
 
-    infos['hash'] = cch
-    infos['status'] = status
+    info['hash'] = cch
+    info['status'] = status
 
     # check if tag associated with commit ------------------------------------
     commits_with_tags = repo_tags(path)
     if cch in commits_with_tags:
-        infos['tag'] = commits_with_tags[cch]
+        info['tag'] = commits_with_tags[cch]
 
-    return infos
+    return info
 
 
 def module_status(module, warning=False):
@@ -170,8 +170,8 @@ def module_status(module, warning=False):
 
     for module in modules:
         name = module.__name__
-        infos = path_status(module.__file__)
-        mods[name] = infos
+        info = path_status(module.__file__)
+        mods[name] = info
 
     dirty_modules = [mod for mod, info in mods.items() if info['status'] == 'dirty']
 
@@ -181,3 +181,25 @@ def module_status(module, warning=False):
         print(msg)
 
     return mods
+
+
+def save_metadata(file, info=None, module=None, warning=False):
+    """Save metadata (info dict) into json file, and add git commit & time info.
+
+    Parameters
+    ----------
+    - file: str or path object of .json file to save data into.
+    - info: dict of info
+    - modules: module or list (or iterable) of modules with git info to save.
+    """
+    metadata = info if info is not None else {}
+    metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Info on commit hashes of homemade modules used -------------------------
+    module_info = module_status(module, warning=warning)
+    metadata['code version'] = module_info
+
+    # Write to file ----------------------------------------------------------
+    # Note: below, the encoding and ensure_ascii options are for the ° sign
+    with open(file, 'w', encoding='utf8') as f:
+        json.dump(metadata, f, indent=4, ensure_ascii=False)

@@ -64,6 +64,11 @@ path_in_tree(path, commit)
 ```
 This function is used by *current_commit_hash* but is also made available in case it proves useful in some situations. Returns True if path belongs to the commit's working tree (or is the root directory of repo), else False.
 
+```python
+save_metadata(file, info=None, module=None, warning=False):
+```
+Save metadata (`infos` dictionary), current time, and git module info (`module` can be a single module or a list of modules). The warning option is the same as for `module_status()`.
+
 
 Exceptions
 ----------
@@ -96,7 +101,7 @@ The `checkdirty` and `checktree` options raise custom exceptions: `DirtyRepo` an
 
 It can be easier to use higher level functions to get hash name, clean/dirty status, and tag (if it exists):
 ```python
->>> from gittools import path_status, module_status
+>>> from gittools import path_status, module_status, save metadata
 
 >>> path_status()  # current working directory (also possible to specify path)
 {'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
@@ -121,6 +126,34 @@ Warning: the following modules have dirty git repositories: mypackage2
                 'tag': 'v1.1.8'},
  'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
                 'status': 'dirty'}}
+```
+
+Save metadata with current time and git info (from `module_status()`)
+```python
+>>> import gittools, aquasol
+>>> from gittools import save_metadata
+>>> modules = gittools, aquasol
+>>> parameters = {'temperature': 25, 'pressure': 2338}
+>>> save_metadata('metadata.json', info=parameters, module=modules)
+
+# Writes a .json file with the following info:
+{
+    "temperature": 25,
+    "pressure": 2338,
+    "time (utc)": "2020-12-03 21:33:17",
+    "code version": {
+        "gittools": {
+            "hash": "12f2ceb3c5fffcc31e422474485e2481890a8094",
+            "status": "dirty",
+            "tag": "v0.3.1"
+        },
+        "aquasol": {
+            "hash": "826aa7655096680815eb43fb22a80ccc3b282015",
+            "status": "clean",
+            "tag": "v1.0.1"
+        }
+    }
+}
 ```
 
 
