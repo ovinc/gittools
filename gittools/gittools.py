@@ -50,9 +50,14 @@ def path_in_tree(path, commit):
     the .git is located), the function also returns True even if one could
     argue that the root directory is technically not in the repo's tree.
 
-    **Inputs**
+    INPUTS
+    ------
     - path: str or path object of folder or file
     - commit: *gitpython* commit object
+
+    OUTPUT
+    ------
+    bool (True if path is in working tree, False if not)
     """
 
     pathabs = _pathify(path)
@@ -153,53 +158,75 @@ def path_status(path='.'):
     return info
 
 
-def module_status(module, warning=False):
+# ================== Functions for status of python modules ==================
+
+
+def module_status(module, dirty_warning=False, notag_warning=False):
     """Get status info (current hash, dirty/clean repo, tag) of module(s).
 
     INPUT
     -----
     - module or list/iterable of modules (each must belong to a git repository)
-    - warning: if True, prints a warning if some git repos are dirty.
+    - dirty_warning: if True, prints a warning if some git repos are dirty.
+    - notag_warning: if True, prints a warning if some git repos don't have tags
 
     OUTPUT
     ------
     Dict with module name as keys, and a dict {hash:, status:, tag:} as values
     """
     modules = _make_iterable(module)
-    mods = {}
+    mods = {}  # dict {module name: dict of module info}
 
     for module in modules:
         name = module.__name__
         info = path_status(module.__file__)
         mods[name] = info
 
-    dirty_modules = [mod for mod, info in mods.items() if info['status'] == 'dirty']
+    if dirty_warning:
 
-    if warning and len(dirty_modules) > 0:
-        msg = '\nWarning: the following modules have dirty git repositories: '
-        msg += ', '.join(dirty_modules)
-        print(msg)
+        dirty_modules = [module for module, info in mods.items()
+                         if info['status'] == 'dirty']
+
+        if len(dirty_modules) > 0:
+            msg = '\nWarning: these modules have dirty git repositories: '
+            msg += ', '.join(dirty_modules)
+            print(msg)
+
+    if notag_warning:
+
+        tagless_modules = [module for module, info in mods.items()
+                           if 'tag' not in info]
+
+        if len(tagless_modules) > 0:
+            msg = '\nWarning: these modules are missing a tag: '
+            msg += ', '.join(tagless_modules)
+            print(msg)
 
     return mods
 
 
-def save_metadata(file, info=None, module=None, warning=False):
+def save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False):
     """Save metadata (info dict) into json file, and add git commit & time info.
 
     Parameters
     ----------
     - file: str or path object of .json file to save data into.
     - info: dict of info
-    - modules: module or list (or iterable) of modules with git info to save.
+    - module: module or iterable (e.g. list) of modules with git info to save.
+    - dirty_warning: if True, prints a warning if some git repos are dirty.
+    - notag_warning: if True, prints a warning if some git repos don't have tags
     """
     metadata = info if info is not None else {}
     metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     # Info on commit hashes of homemade modules used -------------------------
-    module_info = module_status(module, warning=warning)
+    module_info = module_status(module,
+                                dirty_warning=dirty_warning,
+                                notag_warning=notag_warning)
+
     metadata['code version'] = module_info
 
     # Write to file ----------------------------------------------------------
-    # Note: below, the encoding and ensure_ascii options are for the ° sign
+    # Note: below, the encoding and ensure_ascii options are for signs like °
     with open(file, 'w', encoding='utf8') as f:
         json.dump(metadata, f, indent=4, ensure_ascii=False)

@@ -1,9 +1,8 @@
 # General info
 
-Tools for using git in python, based on *gitpython*.
+Tools for getting information about git repositories in python, based on *gitpython*.
 
-Install
--------
+## Install
 
 ### Method 1
 
@@ -20,24 +19,16 @@ In a terminal, cd into the project or folder, where the setup.py is, then
 ```bash
 pip install .
 ```
-
-- Clone the project or download directly the files into a folder.
-- In a terminal, `cd` into the project's folder (where the file
-__setup.py__ is located).
-- run `python -m pip install .` in the command line.
+(`pip install -e .` for editable install)
 
 Now, the module can be imported in Python with `import gittools`.
-
-**Note**: replace `python` with the command or alias corresponding to the Python installation you would like to install the package with.
-
-**Note**: if you wish to keep the package files in the folder where the files
-were downloaded and/or edit the files with direct effect in Python, run the
-following install command instead: `python -m pip install -e .`.
 
 
 # Available functions
 
 See help / docstrings of functions for details, and **Examples** section below.
+
+## General functions
 
 ```python
 current_commit_hash(path='.', checkdirty=True, checktree=True)
@@ -49,10 +40,21 @@ path_status(path='.')
 ```
 Similar to `current_commit_hash()` but does not raise exceptions. Instead, returns git status (commit hash, dirty or clean, tag if there is one) as a dictionary.
 
+
+## Functions for python modules
+
 ```python
-module_status(module, warning=False)
+module_status(module, dirty_warning=False, notag_warning=False)
 ```
-Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`
+Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`. Options for warnings if the repo is dirty or if it is missing a tag at the current commit.
+
+```python
+save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False):
+```
+Save metadata (`infos` dictionary), current time, and git module info. The `module`, `dirty_warning` and `notag_warning` options are the same as for `module_status()`.
+
+
+## Miscellaneous functions
 
 ```python
 repo_tags(path='.')
@@ -63,11 +65,6 @@ Lists all tags in repository the path belongs to, as a {'commit hash': 'tag name
 path_in_tree(path, commit)
 ```
 This function is used by *current_commit_hash* but is also made available in case it proves useful in some situations. Returns True if path belongs to the commit's working tree (or is the root directory of repo), else False.
-
-```python
-save_metadata(file, info=None, module=None, warning=False):
-```
-Save metadata (`infos` dictionary), current time, and git module info (`module` can be a single module or a list of modules). The warning option is the same as for `module_status()`.
 
 
 Exceptions
@@ -115,7 +112,7 @@ It can be easier to use higher level functions to get hash name, clean/dirty sta
                 'tag': 'v1.1.8'}}
 
 >>> import mypackage2  # this package has uncommitted changes and no tags
->>> module_status(mypackage2, warning=True)
+>>> module_status(mypackage2, dirty_warning=True)
 Warning: the following modules have dirty git repositories: mypackage2
 {'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
                 'status': 'dirty'}}
