@@ -3,6 +3,7 @@
 from pathlib import Path, PurePosixPath
 from datetime import datetime
 import json
+from copy import copy
 
 from git import Repo
 
@@ -216,7 +217,7 @@ def save_metadata(file, info=None, module=None, dirty_warning=False, notag_warni
     - dirty_warning: if True, prints a warning if some git repos are dirty.
     - notag_warning: if True, prints a warning if some git repos don't have tags
     """
-    metadata = info if info is not None else {}
+    metadata = copy(info) if info is not None else {}
     metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     # Info on commit hashes of homemade modules used -------------------------

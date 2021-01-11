@@ -1,8 +1,21 @@
-# General info
+# About
 
-Tools for getting information about git repositories in python, based on *gitpython*.
+Tools for getting information about git repositories in python, based on *gitpython*; *gittools* provides functions to get quick commit information of paths / files:
+- `current_commit_hash()` (return *str* of latest commit)
+- `path_status()` (return *dict* with more info, e.g. tags, dirty or not, etc.)
 
-## Install
+There are also functions targeted for use on python modules that are within a git repository (e.g. following editable install from git clone):
+- `module_status()`: similar to *path_status()* but with python module(s) as an input instead of a path
+- `save_metadata()`: save git information and any other metadata provided as input into a JSON file.
+
+Other functions include `repo_tags()` and `path_in_tree()` (see below).
+
+See docstrings and information below for more details.
+
+
+# Install
+
+*Note:* git must be installed for these methods to work (see gitpython requirements for git minimal version)
 
 ### Method 1
 
@@ -56,15 +69,10 @@ Save metadata (`infos` dictionary), current time, and git module info. The `modu
 
 ## Miscellaneous functions
 
-```python
-repo_tags(path='.')
-```
-Lists all tags in repository the path belongs to, as a {'commit hash': 'tag name'} dictionary (both keys and values are strings).
 
-```python
-path_in_tree(path, commit)
-```
-This function is used by *current_commit_hash* but is also made available in case it proves useful in some situations. Returns True if path belongs to the commit's working tree (or is the root directory of repo), else False.
+- `repo_tags(path='.')`: lists all tags in repository the path belongs to, as a {'commit hash': 'tag name'} dictionary (both keys and values are strings).
+
+- `path_in_tree(path, commit)`: used by *current_commit_hash*; returns True if path belongs to the commit's working tree (or is the root directory of repo), else False.
 
 
 Exceptions
@@ -144,8 +152,8 @@ Save metadata with current time and git info (from `module_status()`)
             "status": "dirty",
             "tag": "v0.3.1"
         },
-        "aquasol": {
-            "hash": "826aa7655096680815eb43fb22a80ccc3b282015",
+        "oclock": {
+            "hash": "826aa76e5096680805eb43fb22a80ccc3b282015",
             "status": "clean",
             "tag": "v1.0.1"
         }
@@ -163,4 +171,4 @@ Save metadata with current time and git info (from `module_status()`)
 
 # Author
 
-Olivier Vincent (olivier.vincent@univ-lyon1.fr)
+Olivier Vincent (ovinc.py@gmail.com)
