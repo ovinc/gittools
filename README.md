@@ -15,29 +15,11 @@ See docstrings and information below for more details.
 
 # Install
 
-*Note:* git must be installed for these methods to work (see gitpython requirements for git minimal version)
-
-### Method 1
-
-In a terminal:
 ```bash
-pip install git+https://cameleon.univ-lyon1.fr/ovincent/gittools
+pip install gittools
 ```
 
-### Method 2
-
-Clone the project or download directly the files into a folder.
-In a terminal, cd into the project or folder, where the setup.py is, then
-
-```bash
-pip install .
-```
-(`pip install -e .` for editable install)
-
-Now, the module can be imported in Python with `import gittools`.
-
-
-# Available functions
+# Contents
 
 See help / docstrings of functions for details, and **Examples** section below.
 
@@ -87,7 +69,7 @@ The `checkdirty` and `checktree` options raise custom exceptions: `DirtyRepo` an
 >>> from gittools import current_commit_hash, repo_tags
 
 >>> current_commit_hash()  # Most recent commit of the current working directory
-'1f37588eb5aadf802274fae74bc4abb77ddd8004'
+'1f37588eb5aadf802274fae74bc4abb77d9d8004'
 
 # Other possibilities
 >>> current_commit_hash(checkdirty=False) # same, but avoid raising DirtyRepo
@@ -100,8 +82,8 @@ The `checkdirty` and `checktree` options raise custom exceptions: `DirtyRepo` an
 
 # List all tags of repo:
 >>> repo_tags()  # current directory, but also possible to specify path
-{'1f37588eb5aadf802274fae74bc4abb77ddd8004': 'v1.1.8',
- 'b5173941c9cce9bb786b0c046c67ea505786d820': 'v1.1.9'}
+{'1f37588eb5aadf802274fae74bc4abb77d9d8004': 'v1.1.8',
+ 'b5173941c9cceebb786b0c046c67ea505786d820': 'v1.1.9'}
 ```
 
 It can be easier to use higher level functions to get hash name, clean/dirty status, and tag (if it exists):
@@ -109,13 +91,13 @@ It can be easier to use higher level functions to get hash name, clean/dirty sta
 >>> from gittools import path_status, module_status, save metadata
 
 >>> path_status()  # current working directory (also possible to specify path)
-{'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+{'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
  'status': 'clean',
  'tag': 'v1.1.8'}
 
 >>> import mypackage1  # module with clean repo and tag at current commit
 >>> module_status(mypackage1)
-{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
                 'status': 'clean',
                 'tag': 'v1.1.8'}}
 
@@ -126,7 +108,7 @@ Warning: the following modules have dirty git repositories: mypackage2
                 'status': 'dirty'}}
 
 >>> module_status([mypackage1, mypackage2]) # list of modules
-{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77ddd8004',
+{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
                 'status': 'clean',
                 'tag': 'v1.1.8'},
  'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
@@ -135,7 +117,7 @@ Warning: the following modules have dirty git repositories: mypackage2
 
 Save metadata with current time and git info (from `module_status()`)
 ```python
->>> import gittools, aquasol
+>>> import gittools, oclock
 >>> from gittools import save_metadata
 >>> modules = gittools, aquasol
 >>> parameters = {'temperature': 25, 'pressure': 2338}
@@ -164,11 +146,18 @@ Save metadata with current time and git info (from `module_status()`)
 
 # Requirements
 
-- Python >= 3.6 (f-strings)
+### Python
+- Python >= 3.6
 - gitpython (https://gitpython.readthedocs.io)
-- see gitpython requirements for git minimal version.
+
+### Other
+- git (see gitpython requirements for git minimal version)
 
 
 # Author
 
 Olivier Vincent (ovinc.py@gmail.com)
+
+# License
+
+3-Clause BSD (see *LICENSE* file)

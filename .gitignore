@@ -4,3 +4,4 @@
 .vscode/
 build/
 dist/
+tests/metadata_file_test.json

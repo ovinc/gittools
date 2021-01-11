@@ -10,7 +10,7 @@ basepath = Path(gittools.__file__).parent / '..'
 
 def test_cch():
     """Test current_commit_hash()"""
-    cch = gittools.current_commit_hash()
+    cch = gittools.current_commit_hash(checkdirty=False)
     assert type(cch) is str
 
 
