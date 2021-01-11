@@ -147,6 +147,9 @@ Save metadata with current time and git info (from `module_status()`)
 # Requirements
 
 ### Python
+
+(automatically installed by pip if necessary)
+
 - Python >= 3.6
 - gitpython (https://gitpython.readthedocs.io)
 
