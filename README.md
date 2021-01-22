@@ -152,6 +152,7 @@ Save metadata with current time and git info (from `module_status()`)
 
 - Python >= 3.6
 - gitpython (https://gitpython.readthedocs.io)
+- importlib-metadata
 
 ### Other
 - git (see gitpython requirements for git minimal version)
