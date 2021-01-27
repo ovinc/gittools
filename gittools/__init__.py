@@ -8,4 +8,6 @@ from .gittools import save_metadata
 # from importlib.metadata import version
 from importlib_metadata import version
 
+__author__ = 'Olivier Vincent'
 __version__ = version('gittools')
+__license__ = '3-Caluse BSD'

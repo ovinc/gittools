@@ -39,14 +39,22 @@ Similar to `current_commit_hash()` but does not raise exceptions. Instead, retur
 ## Functions for python modules
 
 ```python
-module_status(module, dirty_warning=False, notag_warning=False)
+module_status(module, dirty_warning=False, notag_warning=False, nogit_ok=False, nogit_warning=False)
 ```
-Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`. Options for warnings if the repo is dirty or if it is missing a tag at the current commit.
+Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`.
+
+There is a `nogit_ok` option to avoid raising an error if one or several modules are not in a git repository. In this case, the returned information of the module indicates that the module is not in a git repo and uses the module version number as a tag.
+
+Other options are to print warnings when:
+- the repo is dirty, i.e. uncommitted (`dirty_warning`),
+- it is missing a tag at the current commit (`notag_warning`),
+- one or more modules are not in a git repo (`nogit_warning`).
+
 
 ```python
-save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False):
+save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False, nogit_ok=False, nogit_warning=False):
 ```
-Save metadata (`infos` dictionary), current time, and git module info. The `module`, `dirty_warning` and `notag_warning` options are the same as for `module_status()`.
+Save metadata (`infos` dictionary), current time, and git module info. The `module`, `dirty_warning`, `notag_warning`, `nogit_ok` and `nogit_warning` parameters are the same as for `module_status()`.
 
 
 ## Miscellaneous functions
@@ -88,7 +96,7 @@ The `checkdirty` and `checktree` options raise custom exceptions: `DirtyRepo` an
 
 It can be easier to use higher level functions to get hash name, clean/dirty status, and tag (if it exists):
 ```python
->>> from gittools import path_status, module_status, save metadata
+>>> from gittools import path_status, module_status
 
 >>> path_status()  # current working directory (also possible to specify path)
 {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
@@ -113,15 +121,25 @@ Warning: the following modules have dirty git repositories: mypackage2
                 'tag': 'v1.1.8'},
  'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
                 'status': 'dirty'}}
+
+# mypackage3 not a git repo
+>>> module_status([mypackage1, mypackage2, mypackage3], nogit_ok=True)
+{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
+                'status': 'clean',
+                'tag': 'v1.1.8'},
+ 'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
+                'status': 'dirty'},
+ 'mypackage3': {'status': 'not a git repository',
+                'tag': 'v1.3.2'}}
 ```
 
 Save metadata with current time and git info (from `module_status()`)
 ```python
->>> import gittools, oclock
+>>> import gittools, oclock, numpy
 >>> from gittools import save_metadata
 >>> modules = gittools, aquasol
 >>> parameters = {'temperature': 25, 'pressure': 2338}
->>> save_metadata('metadata.json', info=parameters, module=modules)
+>>> save_metadata('metadata.json', info=parameters, module=modules, nogit_ok=True)
 
 # Writes a .json file with the following info:
 {
@@ -139,22 +157,30 @@ Save metadata with current time and git info (from `module_status()`)
             "status": "clean",
             "tag": "v1.0.1"
         }
+        "numpy": {
+            "status": "not a git repository",
+            "tag": "v1.19.2"
+        }
     }
 }
 ```
 
 
-# Requirements
+# Requirements / dependencies
 
 ### Python
 
-(automatically installed by pip if necessary)
-
 - Python >= 3.6
+
+### Python packages
+
+(installed automatically by pip if necessary)
+
 - gitpython (https://gitpython.readthedocs.io)
 - importlib-metadata
 
 ### Other
+
 - git (see gitpython requirements for git minimal version)
 
 

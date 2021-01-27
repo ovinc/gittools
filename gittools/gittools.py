@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 from copy import copy
 
-from git import Repo
+from git import Repo, InvalidGitRepositoryError
 
 # ============================ Custom exceptions =============================
 
@@ -162,16 +162,21 @@ def path_status(path='.'):
 # ================== Functions for status of python modules ==================
 
 
-def module_status(module, dirty_warning=False, notag_warning=False):
+def module_status(module, dirty_warning=False, notag_warning=False,
+                  nogit_ok=False, nogit_warning=False):
     """Get status info (current hash, dirty/clean repo, tag) of module(s).
 
-    INPUT
-    -----
+    Parameters
+    ----------
     - module or list/iterable of modules (each must belong to a git repository)
     - dirty_warning: if True, prints a warning if some git repos are dirty.
     - notag_warning: if True, prints a warning if some git repos don't have tags
+    - nogit_ok: if True, if some modules are not in a git repo, simply get
+      their version number. If False (default), raise an error.
+    - nogit_warning: if some modules are not in a git repo and nogit_ok is True,
+      print a warning when this happens.
 
-    OUTPUT
+    Output
     ------
     Dict with module name as keys, and a dict {hash:, status:, tag:} as values
     """
@@ -179,9 +184,20 @@ def module_status(module, dirty_warning=False, notag_warning=False):
     mods = {}  # dict {module name: dict of module info}
 
     for module in modules:
+
         name = module.__name__
-        info = path_status(module.__file__)
+
+        try:
+            info = path_status(module.__file__)
+        except InvalidGitRepositoryError:
+            if nogit_ok:
+                tag = 'v' + module.__version__
+                info = {'status': 'not a git repository', 'tag': tag}
+            else:
+                raise InvalidGitRepositoryError(f'{module} not a git repo')
         mods[name] = info
+
+    # Manage warnings if necessary -------------------------------------------
 
     if dirty_warning:
 
@@ -203,10 +219,21 @@ def module_status(module, dirty_warning=False, notag_warning=False):
             msg += ', '.join(tagless_modules)
             print(msg)
 
+    if nogit_ok and nogit_warning:
+
+        nogit_modules = [module for module, info in mods.items()
+                         if info['status'] == 'not a git repository']
+
+        if len(nogit_modules) > 0:
+            msg = '\nWarning: these modules are not in a git repository: '
+            msg += ', '.join(nogit_modules)
+            print(msg)
+
     return mods
 
 
-def save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False):
+def save_metadata(file, info=None, module=None, dirty_warning=False,
+                  notag_warning=False, nogit_ok=False, nogit_warning=False):
     """Save metadata (info dict) into json file, and add git commit & time info.
 
     Parameters
@@ -216,6 +243,10 @@ def save_metadata(file, info=None, module=None, dirty_warning=False, notag_warni
     - module: module or iterable (e.g. list) of modules with git info to save.
     - dirty_warning: if True, prints a warning if some git repos are dirty.
     - notag_warning: if True, prints a warning if some git repos don't have tags
+    - nogit_ok: if True, if some modules are not in a git repo, simply get
+      their version number. If False (default), raise an error.
+    - nogit_warning: if some modules are not in a git repo and nogit_ok is True,
+      print a warning when this happens.
     """
     metadata = copy(info) if info is not None else {}
     metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
@@ -223,7 +254,8 @@ def save_metadata(file, info=None, module=None, dirty_warning=False, notag_warni
     # Info on commit hashes of homemade modules used -------------------------
     module_info = module_status(module,
                                 dirty_warning=dirty_warning,
-                                notag_warning=notag_warning)
+                                notag_warning=notag_warning,
+                                nogit_ok=nogit_ok, nogit_warning=nogit_warning)
 
     metadata['code version'] = module_info
 
