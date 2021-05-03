@@ -252,12 +252,13 @@ def save_metadata(file, info=None, module=None, dirty_warning=False,
     metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
 
     # Info on commit hashes of homemade modules used -------------------------
-    module_info = module_status(module,
-                                dirty_warning=dirty_warning,
-                                notag_warning=notag_warning,
-                                nogit_ok=nogit_ok, nogit_warning=nogit_warning)
+    if module is not None:
+        module_info = module_status(module,
+                                    dirty_warning=dirty_warning,
+                                    notag_warning=notag_warning,
+                                    nogit_ok=nogit_ok, nogit_warning=nogit_warning)
 
-    metadata['code version'] = module_info
+        metadata['code version'] = module_info
 
     # Write to file ----------------------------------------------------------
     # Note: below, the encoding and ensure_ascii options are for signs like °
