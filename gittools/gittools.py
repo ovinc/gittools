@@ -5,6 +5,7 @@ from datetime import datetime
 import json
 from copy import copy
 
+import importlib_metadata
 from git import Repo, InvalidGitRepositoryError
 
 # ============================ Custom exceptions =============================
@@ -191,8 +192,16 @@ def module_status(module, dirty_warning=False, notag_warning=False,
             info = path_status(module.__file__)
         except InvalidGitRepositoryError:
             if nogit_ok:
-                tag = 'v' + module.__version__
-                info = {'status': 'not a git repository', 'tag': tag}
+
+                try:
+                    version = module.__version__
+                except AttributeError:
+                    version = importlib_metadata.version(name)
+
+                tag = 'v' + version
+                info = {'status': 'not a git repository',
+                        'tag': tag}
+
             else:
                 raise InvalidGitRepositoryError(f'{module} not a git repo')
         mods[name] = info
