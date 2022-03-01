@@ -39,7 +39,7 @@ Similar to `current_commit_hash()` but does not raise exceptions. Instead, retur
 ## Functions for python modules
 
 ```python
-module_status(module, dirty_warning=False, notag_warning=False, nogit_ok=False, nogit_warning=False)
+module_status(module, dirty_warning=False, dirty_ok=True, notag_warning=False, nogit_ok=False, nogit_warning=False)
 ```
 Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`.
 
@@ -50,9 +50,11 @@ Other options are to print warnings when:
 - it is missing a tag at the current commit (`notag_warning`),
 - one or more modules are not in a git repo (`nogit_warning`).
 
+If `dirty_ok` is set to False, a `DirtyRepo` exception is thrown if the module(s) have a dirty repository.
+
 
 ```python
-save_metadata(file, info=None, module=None, dirty_warning=False, notag_warning=False, nogit_ok=False, nogit_warning=False):
+save_metadata(file, info=None, module=None, dirty_warning=False, dirty_ok=True, notag_warning=False, nogit_ok=False, nogit_warning=False):
 ```
 Save metadata (`infos` dictionary), current time, and git module info. The `module`, `dirty_warning`, `notag_warning`, `nogit_ok` and `nogit_warning` parameters are the same as for `module_status()`.
 
