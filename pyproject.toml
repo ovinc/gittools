@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gittools"
+authors = [
+    {name = "Olivier Vincent", email = "ovinc.py@gmail.com"},
+]
+description = "Tools to get git version information on files and python modules/packages"
+readme = "README.md"
+requires-python = ">=3.6"
+keywords = [
+    "git",
+    "python",
+    "version",
+    "metadata",
+    "module",
+    "package",
+]
+license = {text = "BSD 3-Clause License"}
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: BSD License",
+]
+dependencies = [
+    "gitpython",
+    "importlib-metadata",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "https://github.com/ovinc/gittools"
+Documentation = "https://github.com/ovinc/gittools/README.md"
+Repository = "https://github.com/ovinc/gittools.git"
+
+[tool.setuptools_scm]
+# can be empty if no extra settings are needed, presence enables setuptools-scm
