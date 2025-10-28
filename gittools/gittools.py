@@ -1,7 +1,7 @@
 """Git tools for Python."""
 
 from pathlib import Path, PurePosixPath
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from copy import copy
 
@@ -52,16 +52,17 @@ def path_in_tree(path, commit):
     the .git is located), the function also returns True even if one could
     argue that the root directory is technically not in the repo's tree.
 
-    INPUTS
-    ------
-    - path: str or path object of folder or file
-    - commit: *gitpython* commit object
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        path object of folder or file
+    commit : *gitpython* commit object
 
-    OUTPUT
-    ------
-    bool (True if path is in working tree, False if not)
+    Returns
+    -------
+    bool
+        True if path is in working tree, False if not
     """
-
     pathabs = _pathify(path)
     rootabs = Path(commit.repo.working_dir).resolve()  # path of root of repo
 
@@ -82,16 +83,20 @@ def path_in_tree(path, commit):
 def current_commit_hash(path='.', checkdirty=True, checktree=True):
     """Return HEAD commit hash corresponding to path if it's in a git repo.
 
-    INPUT
-    -----
-    - path: str or path object of folder/file. Default: current working dir.
-    - checkdirty: bool, if True exception raised if repo has uncommitted changes.
-    - checktree: bool, if True exception raised if path/file not in repo's
-    working tree and path is not the root directory of the repo.
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        folder/file. Default: current working dir.
+    checkdirty : bool
+        if True exception raised if repo has uncommitted changes.
+    checktree : bool
+        if True exception raised if path/file not in repo's working tree and
+        path is not the root directory of the repo.
 
-    OUTPUT
-    ------
-    - str of the commit's hash name.
+    Returns
+    -------
+    str
+        commit's hash name.
     """
     p = _pathify(path)
     repo = Repo(p, search_parent_directories=True)
@@ -110,13 +115,15 @@ def current_commit_hash(path='.', checkdirty=True, checktree=True):
 def repo_tags(path='.'):
     """Return dict of all {'commit hash': 'tag name'} in git repo.
 
-    INPUT
-    -----
-    - path: str or path object of folder/file. Default: current working dir.
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        object of folder/file. Default: current working dir.
 
-    OUTPUT
-    ------
-    dict  {'commit hash': 'tag name'} (both key and value are str).
+    Returns
+    -------
+    dict
+        {'commit hash': 'tag name'} (both key and value are str).
     """
     p = _pathify(path)
     repo = Repo(p, search_parent_directories=True)
@@ -130,13 +137,15 @@ def path_status(path='.'):
     Slightly higher level compared to current_commit_hash, as it returns a
     dictionary with a variety of information (status, hash, tag)
 
-    INPUT
-    -----
-    - path: str or path object of folder/file. Default: current working dir.
+    Parameters
+    ----------
+    path : str or pathlib.Path
+        object of folder/file. Default: current working dir.
 
-    OUTPUT
-    ------
-    Dictionary keys 'hash', 'status' (clean/diry), 'tag' (if exists)
+    Returns
+    -------
+    dict
+        dictionary with keys 'hash', 'status' (clean/diry), 'tag' (if exists)
     """
     info = {}
 
@@ -163,28 +172,37 @@ def path_status(path='.'):
 # ================== Functions for status of python modules ==================
 
 
-def module_status(module,
-                  dirty_warning=False,
-                  dirty_ok=True,
-                  notag_warning=False,
-                  nogit_ok=False,
-                  nogit_warning=False):
+def module_status(
+    module,
+    dirty_warning=False,
+    dirty_ok=True,
+    notag_warning=False,
+    nogit_ok=False,
+    nogit_warning=False,
+):
     """Get status info (current hash, dirty/clean repo, tag) of module(s).
 
     Parameters
     ----------
-    - module or list/iterable of modules (each must belong to a git repository)
-    - dirty_warning: if True, prints a warning if some git repos are dirty.
-    - dirty_ok: if False, raise an error if module(s) is/are dirty.
-    - notag_warning: if True, prints a warning if some git repos don't have tags
-    - nogit_ok: if True, if some modules are not in a git repo, simply get
-      their version number. If False (default), raise an error.
-    - nogit_warning: if some modules are not in a git repo and nogit_ok is True,
-      print a warning when this happens.
+    module : module or list/iterable
+        module or iterable of modules (each must belong to a git repository)
+    dirty_warning : bool
+        if True, prints a warning if some git repos are dirty.
+    dirty_ok : bool
+        if False, raise an error if module(s) is/are dirty.
+    notag_warning : bool
+        if True, prints a warning if some git repos don't have tags
+    nogit_ok : bool
+        if True, if some modules are not in a git repo, simply get
+        their version number. If False (default), raise an error.
+    nogit_warning : bool
+        if some modules are not in a git repo and nogit_ok is True,
+        print a warning when this happens.
 
-    Output
-    ------
-    Dict with module name as keys, and a dict {hash:, status:, tag:} as values
+    Returns
+    -------
+    dict
+        module name as keys, and a dict {hash:, status:, tag:} as values
     """
     modules = _make_iterable(module)
     mods = {}  # dict {module name: dict of module info}
@@ -251,42 +269,56 @@ def module_status(module,
     return mods
 
 
-def save_metadata(file,
-                  info=None,
-                  module=None,
-                  dirty_warning=False,
-                  dirty_ok=True,
-                  notag_warning=False,
-                  nogit_ok=False,
-                  nogit_warning=False):
+def save_metadata(
+    file,
+    info=None,
+    module=None,
+    dirty_warning=False,
+    dirty_ok=True,
+    notag_warning=False,
+    nogit_ok=False,
+    nogit_warning=False,
+):
     """Save metadata (info dict) into json file, and add git commit & time info.
 
     Parameters
     ----------
-    - file: str or path object of .json file to save data into.
-    - info: dict of info
-    - module: module or iterable (e.g. list) of modules with git info to save.
-    - dirty_warning: if True, prints a warning if some git repos are dirty.
-    - dirty_ok: if False, raise an error if module(s) is/are dirty.
-    - notag_warning: if True, prints a warning if some git repos don't have tags
-    - nogit_ok: if True, if some modules are not in a git repo, simply get
-      their version number. If False (default), raise an error.
-    - nogit_warning: if some modules are not in a git repo and nogit_ok is True,
-      print a warning when this happens.
+    file : str or pathlib.Path
+        .json file to save data into.
+    info : dict
+        misc. info to save into the json file along module information
+    module : python package
+        module or iterable (e.g. list) of modules with git info to save.
+    dirty_warning : bool
+        if True, prints a warning if some git repos are dirty.
+    dirty_ok : bool
+        if False, raise an error if module(s) is/are dirty.
+    notag_warning : bool
+        if True, prints a warning if some git repos don't have tags
+    nogit_ok : bool
+        if True, if some modules are not in a git repo, simply get
+        their version number. If False (default), raise an error.
+    nogit_warning : bool
+        if some modules are not in a git repo and nogit_ok is True,
+        print a warning when this happens.
+
+    Returns
+    -------
+    None
     """
     metadata = copy(info) if info is not None else {}
-    metadata['time (utc)'] = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
+    metadata['time (utc)'] = datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
 
     # Info on commit hashes of homemade modules used -------------------------
     if module is not None:
-        module_info = module_status(module,
-                                    dirty_warning=dirty_warning,
-                                    dirty_ok=dirty_ok,
-                                    notag_warning=notag_warning,
-                                    nogit_ok=nogit_ok,
-                                    nogit_warning=nogit_warning)
-
-        metadata['code version'] = module_info
+        metadata['code version'] = module_status(
+            module,
+            dirty_warning=dirty_warning,
+            dirty_ok=dirty_ok,
+            notag_warning=notag_warning,
+            nogit_ok=nogit_ok,
+            nogit_warning=nogit_warning,
+        )
 
     # Write to file ----------------------------------------------------------
     # Note: below, the encoding and ensure_ascii options are for signs like °
