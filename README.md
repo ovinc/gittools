@@ -4,8 +4,9 @@ Tools for getting information about git repositories in python, based on *gitpyt
 - `current_commit_hash()` (return *str* of latest commit)
 - `path_status()` (return *dict* with more info, e.g. tags, dirty or not, etc.)
 
-There are also functions targeted for use on python modules that are within a git repository (e.g. following editable install from git clone):
-- `module_status()`: similar to *path_status()* but with python module(s) as an input instead of a path
+There are also functions targeted for use on python packages and modules that are within a git repository (e.g. following editable install from git clone):
+- `module_status()`: similar to *path_status()* but with a python package or module as an input instead of a path
+- `check_modules()`: check the status of a collection of python modules/packages using module_status()
 - `save_metadata()`: save git information and any other metadata provided as input into a JSON file.
 
 Other functions include `repo_tags()` and `path_in_tree()` (see below).
@@ -26,7 +27,11 @@ See help / docstrings of functions for details, and **Examples** section below.
 ## General functions
 
 ```python
-current_commit_hash(path='.', checkdirty=True, checktree=True)
+current_commit_hash(
+    path='.',
+    checkdirty=True,
+    checktree=True,
+)
 ```
 commit hash (str) of HEAD commit of repository where path belongs; if True, `checkdirty` and `checktree` raise exceptions if repo is dirty and if path does not belong to repo's tree, respectively.
 
@@ -35,26 +40,50 @@ path_status(path='.')
 ```
 Similar to `current_commit_hash()` but does not raise exceptions. Instead, returns git status (commit hash, dirty or clean, tag if there is one) as a dictionary.
 
+```python
+module_status(module, nogit_ok=True)
+```
+Similar to `path_status()` but takes a python module or python package as input.
+If `nogit_ok` is set to `False`, the function will raise an error when the module is not versioned by git.
+If `nogit_ok` is set to `True`, module status will indicate version info if available.
 
-## Functions for python modules
+
+## Functions for collections of modules and metadata
 
 ```python
-module_status(module, dirty_warning=False, dirty_ok=True, notag_warning=False, nogit_ok=False, nogit_warning=False)
+check_modules(
+    modules,
+    dirty_warning=False,
+    dirty_ok=False,
+    notag_warning=False,
+    nogit_ok=False,
+    nogit_warning=False,
+)
 ```
-Version of `path_status()` adapted for python modules (module can be a single module or a list/iterable of modules). Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`.
+Get version information for a collection of modules.
+Data is returned as a dict of dicts where the keys are module names and the nested dicts correspond to dicts returned by `path_status()`.
 
-There is a `nogit_ok` option to avoid raising an error if one or several modules are not in a git repository. In this case, the returned information of the module indicates that the module is not in a git repo and uses the module version number as a tag.
+There is a `nogit_ok` option to avoid raising an error if one or several modules are not in a git repository.
+In this case, the returned information of the module indicates that the module is not in a git repo and uses the module version number as a tag.
+Similarly, if `dirty_ok` is set to True, no `DirtyRepo` exception is thrown if the modules have a dirty repository.
 
 Other options are to print warnings when:
 - the repo is dirty, i.e. uncommitted (`dirty_warning`),
 - it is missing a tag at the current commit (`notag_warning`),
 - one or more modules are not in a git repo (`nogit_warning`).
 
-If `dirty_ok` is set to False, a `DirtyRepo` exception is thrown if the module(s) have a dirty repository.
-
 
 ```python
-save_metadata(file, info=None, module=None, dirty_warning=False, dirty_ok=True, notag_warning=False, nogit_ok=False, nogit_warning=False):
+save_metadata(
+    file,
+    info=None,
+    module=None,
+    dirty_warning=False,
+    dirty_ok=False,
+    notag_warning=False,
+    nogit_ok=False,
+    nogit_warning=False,
+):
 ```
 Save metadata (`infos` dictionary), current time, and git module info. The `module`, `dirty_warning`, `notag_warning`, `nogit_ok` and `nogit_warning` parameters are the same as for `module_status()`.
 
@@ -107,17 +136,21 @@ It can be easier to use higher level functions to get hash name, clean/dirty sta
 
 >>> import mypackage1  # module with clean repo and tag at current commit
 >>> module_status(mypackage1)
-{'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
-                'status': 'clean',
-                'tag': 'v1.1.8'}}
+{'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
+ 'status': 'clean',
+ 'tag': 'v1.1.8'}
 
 >>> import mypackage2  # this package has uncommitted changes and no tags
->>> module_status(mypackage2, dirty_warning=True)
-Warning: the following modules have dirty git repositories: mypackage2
-{'mypackage2': {'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
-                'status': 'dirty'}}
+>>> module_status(mypackage2)
+{'hash': '8a0305e6c4e7a57ad7befee703c4905aa15eab23',
+'status': 'dirty'}
 
->>> module_status([mypackage1, mypackage2]) # list of modules
+>>> check_modules(
+    [mypackage1, mypackage2],
+    dirty_ok=True,
+    dirty_warning=True,
+)
+Warning: the following modules have dirty git repositories: mypackage2
 {'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
                 'status': 'clean',
                 'tag': 'v1.1.8'},
@@ -125,7 +158,11 @@ Warning: the following modules have dirty git repositories: mypackage2
                 'status': 'dirty'}}
 
 # mypackage3 not a git repo
->>> module_status([mypackage1, mypackage2, mypackage3], nogit_ok=True)
+>>> check_modules(
+    [mypackage1, mypackage2, mypackage3],
+    dirty_ok=True,
+    nogit_ok=True,
+)
 {'mypackage1': {'hash': '1f37588eb5aadf802274fae74bc4abb77d9d8004',
                 'status': 'clean',
                 'tag': 'v1.1.8'},
@@ -139,9 +176,9 @@ Save metadata with current time and git info (from `module_status()`)
 ```python
 >>> import gittools, oclock, numpy
 >>> from gittools import save_metadata
->>> modules = gittools, aquasol
+>>> modules = gittools, oclock
 >>> parameters = {'temperature': 25, 'pressure': 2338}
->>> save_metadata('metadata.json', info=parameters, module=modules, nogit_ok=True)
+>>> save_metadata('metadata.json', info=parameters, modules=modules, dirty_ok=True, nogit_ok=True)
 
 # Writes a .json file with the following info:
 {

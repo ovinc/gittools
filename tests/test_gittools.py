@@ -22,16 +22,37 @@ def test_pst():
 
 def test_mst():
     """Test module_status()"""
-    mst = gittools.module_status(gittools)
-    assert type(mst['gittools']['hash']) is str
+    mst = gittools.module_status(gittools, nogit_ok=True)
+    assert type(mst['status']) is str
+
+
+def test_chmd():
+    """Test check_modules"""
+    info = gittools.check_modules(
+        (gittools,),
+        dirty_ok=True,
+        dirty_warning=True,
+        notag_warning=True,
+        nogit_ok=True,
+        nogit_warning=True,
+    )
+    assert type(info['gittools']['status']) is str
 
 
 def test_smd():
     """Test save_metadata()"""
     param = {'test': 'test', 'other': 33}
     file = basepath / 'tests' / 'metadata_file_test.json'
-    gittools.save_metadata(file, info=param, module=gittools,
-                           dirty_warning=True, notag_warning=True)
+    gittools.save_metadata(
+        file,
+        info=param,
+        modules=(gittools,),
+        nogit_ok=True,
+        nogit_warning=True,
+        dirty_ok=True,
+        dirty_warning=True,
+        notag_warning=True,
+    )
     assert file.exists()
 
 
